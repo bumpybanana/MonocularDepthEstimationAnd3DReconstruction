@@ -1,20 +1,11 @@
 import os
 import torch
-import torchvision.datasets
-from skimage import io
-import matplotlib.pyplot as plt
 from PIL import Image
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
-import numpy as np
 
-transformation = transforms.Compose([transforms.RandomCrop(320),
-                                         transforms.RandomHorizontalFlip(p=0.5),
-                                         transforms.RandomVerticalFlip(p=0.5),
-                                         transforms.RandomAffine(4.5,scale=(1, 1.5)),
-                                       # transforms.ColorJitter()
-                                         transforms.ToTensor()])
+
 
 class DepthDataset(Dataset):
     def __init__(self,rgb_dir,depth_dir,transform=None):
@@ -29,18 +20,29 @@ class DepthDataset(Dataset):
     def __getitem__(self, index):
         rgb_path = os.path.join(self.rgb_dir, self.images[index])
         depth_path = os.path.join(self.depth_dir, self.images[index])
-        rgb = np.array(Image.open(rgb_path).convert("RGB"))
-        depth = np.array(Image.open(depth_path).convert("RGB"))
-
+        rgb = transforms.ToTensor()(Image.open(rgb_path).convert("RGB"))
+        depth = transforms.ToTensor()(Image.open(depth_path).convert("L"))
+        #print(depth.shape)
+        #print(rgb.shape)
+        concat = torch.cat([rgb, depth])
+        concat = transforms.ToPILImage()(concat)
+        #print(concat.size)
+        concat = transforms.Compose([transforms.RandomHorizontalFlip(p=0.5),
+                                     transforms.RandomVerticalFlip(p=0.5),
+                                     transforms.RandomAffine(4.5, scale=(1, 1.5)),
+                                     transforms.ToTensor()
+                                     ])(concat)
+        concat = torch.split(concat,3,0)
+        #print(concat[0].shape, concat[1].shape)
 
 
         if self.transform is not None:
-             rgb, depth = self.transform(rgb, depth)
+            rgb = self.transform(concat[0])
+            depth = self.transform(concat[1])
+            #rgb = self.transform(transforms.ToPILImage()(concat[0]))
+            #depth = self.transform(transforms.ToPILImage()(concat[1]))
 
         return rgb, depth
 
-#depth_dataset = DepthDataset(rgb_dir="E:/nyuv2/train_rgb",depth_dir="E:/nyuv2/train_depth")
-
-train_data = torchvision.datasets.ImageFolder(root="E:/nyuv2/train_rgb/",transform=transformation)
 
 
