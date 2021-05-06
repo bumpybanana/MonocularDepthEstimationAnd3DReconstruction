@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import torchvision.transforms.functional as tf
 
-#Tensor nach doppelconv
-x = torch.rand(1, 3, 320, 320)
+
+#x = torch.rand(1, 3, 320, 320)
 
 class DoubleConv(nn.Module):
     def __init__(self,inp, oup):
@@ -207,7 +206,15 @@ class Model(nn.Module):
                                  DownsampleMerge(128, 48, 128),
                                  DownsampleMerge(256, 64, 256)
                                  )
+        self.us1 = nn.Sequential(Upsample(1024,64,256), #512,40,40
+                                Transfire(512,64,128)
+                                 )
 
+        self.us2 = nn.Sequential(Upsample(512,48,128), #1,256,80,80
+                                 Transfire(256,48,64)
+                                )
+
+        self.us3 = Upsample(256,32,64)
         self.downsample = nn.Sequential(DoubleConv(3,64), #(1,128,320,320)
                                         Downsample(128,32,64), #([1, 256, 160, 160])
                                         nn.ReLU(),
@@ -237,16 +244,14 @@ class Model(nn.Module):
         ds3 = self.ds3(x)
         x = self.downsample(x)
         x = torch.cat([x,ds3],1) #1,1024,40,40
-        x = Upsample(1024,64,256)(x) #512,40,40
-        x = Transfire(512,64,128)(x) #1,256,80,80
+        x = self.us1(x) #1,256,80,80
         x = torch.cat([x,ds2],1) #1,512,80,80
-        x = Upsample(512,48,128)(x) #1,256,80,80
-        x = Transfire(256,48,64)(x) #1,128,160,160
+        x = self.us2(x) #1,128,160,160
         x = torch.cat([x,ds1],1) # 1,256,160,160
-        x = Upsample(256,32,64)(x) # 1,128,160,160
+        x = self.us3(x) # 1,128,160,160
         x = self.convtranspose(x) # 1,64,320,320
         x = torch.cat([x,ds0],1) #1,128,320,320
-        x = self.lastconvs(x)
+        x = self.lastconvs(x) #1,1,320,320
         return x
 
 
@@ -256,10 +261,3 @@ class Model(nn.Module):
 #model_parameters = filter(lambda p: p.requires_grad, model.parameters())
 #params = sum([np.prod(p.size()) for p in model_parameters])
 #print(params)
-
-
-
-
-
-#down = Downsample(64,32,64)
-#print(down(x))
