@@ -46,18 +46,20 @@ def train_fn(loader,model,optimizer,loss_fn,scaler):
 
     for batch_index, (data, targets) in enumerate(loop):
         data = data.to(device=device)
-        targets = targets.float().to(device=device)
-        #targets = targets.to(device=device)
+        #targets = targets.float().to(device=device)
+        targets = targets.to(device=device)
 
-
-        #forward float 16
-        with torch.cuda.amp.autocast():
-            predictions = model(data)
-            loss = loss_fn(predictions, targets)
+        #forward
+        predictions = model(data)
+        loss = loss_fn(predictions, targets)
 
 
         #backward
         optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -76,10 +78,31 @@ def main():
     if load_model:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
-    scaler = torch.cuda.amp.GradScaler()
+    #scaler = torch.cuda.amp.GradScaler()
 
     for epoch in range(num_epochs):
-        train_fn(trainloader, model, optimizer, loss_fn, scaler)
+       #train_fn(trainloader, model, optimizer, loss_fn)
+        loop = tqdm(trainloader)
+        total_loss = 0
+
+        for batch_index, (data, targets) in enumerate(loop):
+            data = data.to(device=device)
+            # targets = targets.float().to(device=device)
+            targets = targets.to(device=device)
+
+            # forward
+            predictions = model(data)
+            loss = loss_fn(predictions, targets)
+
+            # backward
+            optimizer.zero_grad()
+            loss.backward() #calculate gradients
+            optimizer.step() #update weights
+
+            total_loss += loss.item()
+
+            # update tqdm loop
+            loop.set_postfix(loss=loss.item())
 
         #save model
         checkpoint = {
@@ -97,5 +120,9 @@ def main():
         )
 
 
+
+
+
 if __name__ == "__main__":
     main()
+
