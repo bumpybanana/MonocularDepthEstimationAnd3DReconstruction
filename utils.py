@@ -57,7 +57,7 @@ def check_accuracy(loader, model, device="cuda"):
     model.eval()
 
     with torch.no_grad():
-        for x,y in loader:
+        for x, y in loader:
             x = x.to(device)
             y = y.to(device)
             preds = torch.sigmoid(model(x))
@@ -68,18 +68,48 @@ def check_accuracy(loader, model, device="cuda"):
 
     model.train()
 
-def save_predictions_as_imgs(
-        loader, model, folder ="saved_images/",device="cuda"
+def save_predictions_as_imgs3x3(
+        loader, model, folder ="saved_images3x3/",device="cuda"
 ):
     model.eval()
-    for index, (x,y) in enumerate(loader):
+    for index, (x, y) in enumerate(loader):
         x = x.to(device=device)
         with torch.no_grad():
             preds = torch.sigmoid(model(x))
         torchvision.utils.save_image(
-            preds,f"{folder}/pred_{index}.png"
+            preds, f"{folder}/pred_{index}.png"
         )
-        torchvision.utils.save_image(y.unsqueeze(1),f"{folder}{idx}.png")
+        torchvision.utils.save_image(y,f"{folder}{index}.png")
+
+    model.train()
+
+def save_predictions_as_imgs7x7(
+        loader, model, folder ="saved_images7x7/",device="cuda"
+):
+    model.eval()
+    for index, (x, y) in enumerate(loader):
+        x = x.to(device=device)
+        with torch.no_grad():
+            preds = torch.sigmoid(model(x))
+        torchvision.utils.save_image(
+            preds, f"{folder}/pred_{index}.png"
+        )
+        torchvision.utils.save_image(y,f"{folder}{index}.png")
+
+    model.train()
+
+def save_predictions_as_imgs_squeeze(
+        loader, model, folder ="saved_images_squeeze/",device="cuda"
+):
+    model.eval()
+    for index, (x, y) in enumerate(loader):
+        x = x.to(device=device)
+        with torch.no_grad():
+            preds = torch.sigmoid(model(x))
+        torchvision.utils.save_image(
+            preds, f"{folder}/pred_{index}.png"
+        )
+        torchvision.utils.save_image(y,f"{folder}{index}.png")
 
     model.train()
 
