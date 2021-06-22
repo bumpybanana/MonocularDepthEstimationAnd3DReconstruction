@@ -22,7 +22,27 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+        
+def colorize(value, vmin=0, vmax=255, cmap='magma_r'):
+    value = value[:,:,0]
 
+    # normalize
+    vmin = value.min() if vmin is None else vmin
+    vmax = value.max() if vmax is None else vmax
+    if vmin!=vmax:
+        value = (value - vmin) / (vmax - vmin) # vmin..vmax
+    else:
+        # Avoid 0-division
+        value = value*0.
+    # squeeze last dim if it exists
+    #value = value.squeeze(axis=0)
+
+    cmapper = matplotlib.cm.get_cmap(cmap)
+    value = cmapper(value,bytes=True) # (nxmx4)
+
+    img = value[:,:,:3]
+
+    return img
 
 def save_predictions_dataset(
         loader, model, folder ="saved_images_squeeze/",device="cuda"
