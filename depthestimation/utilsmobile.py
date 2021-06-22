@@ -60,3 +60,36 @@ def save_predictions_dataset(
         torchvision.utils.save_image(y, f"{folder}{index}.png")
 
     model.train()
+    
+def save_checkpoint(state,filename="my_checkpoint.pth.tar"):
+    print("Saving checkpoint")
+    torch.save(state,filename)
+
+def load_checkpoint(checkpoint,model):
+    print("Loading checkpoint")
+    model.load_state_dict(checkpoint["state_dict"])
+    
+def evaluate(output, target):
+    valid_mask = ((target>0) + (output>0)) > 0
+
+    output = 1e3 * output[valid_mask]
+    target = 1e3 * target[valid_mask]
+    abs_diff = (output - target).abs()
+
+    mse = float((torch.pow(abs_diff, 2)).mean())
+    rmse = math.sqrt(mse)
+    mae = float(abs_diff.mean())
+    absrel = float((abs_diff / target).mean())
+
+    maxRatio = torch.max(output / target, target / output)
+    delta1 = float((maxRatio < 1.25).float().mean())
+    delta2 = float((maxRatio < 1.25 ** 2).float().mean())
+    delta3 = float((maxRatio < 1.25 ** 3).float().mean())
+
+    inv_output = 1 / output
+    inv_target = 1 / target
+    abs_inv_diff = (inv_output - inv_target).abs()
+    irmse = math.sqrt((torch.pow(abs_inv_diff, 2)).mean())
+    imae = float(abs_inv_diff.mean())
+
+    return rmse, mae, absrel, delta1, delta2, delta3, irmse, imae
