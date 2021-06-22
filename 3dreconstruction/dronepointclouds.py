@@ -1,3 +1,5 @@
+#creates a 3D point cloud from a rgb image taken with the Crazyflie and its corresponding predicted depth map
+
 import open3d
 import matplotlib.pyplot as plt
 
