@@ -1,3 +1,5 @@
+#creates 3D point clouds from dataset rgb images and their ground truth/predicted depth map 
+
 import open3d
 import matplotlib.pyplot as plt
 
